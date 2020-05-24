@@ -13,17 +13,78 @@ example_3_4 = [-5,+5,-25,+22,+10,+9,-32,-26,+24,-14,-6,+17,-8,-25,+31,-12]
 
 data = example_3_4
 
+from io import StringIO
+import unittest
+from unittest.mock import patch
+
+class TestStemAndLeadPlot(unittest.TestCase):
+
+    def test_two_digit_positives(self):
+
+        eo = ""
+        eo += "3 | 8 \n"
+        eo += "4 | 4 \n"
+        eo += "5 | 9 4 \n"
+        eo += "6 | 2 5 6 \n"
+        eo += "7 | 7 8 4 2 6 6 0 \n"
+        eo += "8 | 4 2 4 5 \n"
+        eo += "9 | 1 6 \n"
+
+
+        with patch('sys.stdout', new = StringIO()) as fake_out:
+            stem_and_leaf_plot(example_2_9)
+            self.assertEqual(fake_out.getvalue(), eo)
+
+    def test_decimal_point(self):
+
+        eo = ""
+        eo += "01 | 8 4 9 7 \n"
+        eo += "02 | 2 6 8 7 2 3 6 9 4 \n"
+        eo += "03 | 4 0 8 2 7 6 0 3 5 0 4 1 \n"
+
+        with patch('sys.stdout', new = StringIO()) as fake_out:
+            stem_and_leaf_plot(example_3_2)
+            self.assertEqual(fake_out.getvalue(), eo)
+
+    def test_plus_and_minus(self):
+
+        eo = ""
+        eo += "-3 | 2 \n"
+        eo += "-2 | 5 6 5 \n"
+        eo += "-1 | 4 2 \n"
+        eo += "-0 | 5 6 8 \n"
+        eo += "+0 | 5 9 \n"
+        eo += "+1 | 0 7 \n"
+        eo += "+2 | 2 4 \n"
+        eo += "+3 | 1 \n"
+
+        with patch('sys.stdout', new = StringIO()) as fake_out:
+            stem_and_leaf_plot(example_3_4)
+            self.assertEqual(fake_out.getvalue(), eo)
+
+
 def stem_and_leaf_plot(data, ordered=False, vertical=False, double=False, five_stem=False):
     
     plot = {}
+
+    signed = min(data) < 0
+
     for d in data:
         s = str(d)
 
-        if d < 10:
+        if d < 10 and d > -1:
             s = '0' + s
         
         stem = s[0]
         leaf = s[1]
+
+        if signed and d > 0:
+            stem = "+" + stem
+        if signed and d < 0:
+            if d > -10:
+                s = s[0] + "0" + s[1:]
+            stem = s[:2]
+            leaf = s[2:]
 
         if "." in s:
             i = s.index(".")
@@ -121,12 +182,7 @@ def stem_and_leaf_plot(data, ordered=False, vertical=False, double=False, five_s
             line += stem + " "
         print(line)
 
-            
-            
-    
 
-    
-          
-    
-    
+if __name__ == '__main__':
+    unittest.main()
     
