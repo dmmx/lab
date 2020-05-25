@@ -11,6 +11,8 @@ example_3_3 = [3,11,14,9,5,6,5,19,4,4,7,2,2,4,10,16,5,2,4,4,1,4,9,6,4,6,1,2,4,5,
 
 example_3_4 = [-5,+5,-25,+22,+10,+9,-32,-26,+24,-14,-6,+17,-8,-25,+31,-12]
 
+example_3_5 = [472, 303, 280, 282, 417, 400, 257, 205, 384, 264, 317, 76, 643, 480, 136, 250, 100, 732, 317, 264, 384, 750, 402, 422, 373, 325, 313, 749, 791, 196, 891, 283, 52, 186, 693] 
+
 data = example_3_4
 
 from io import StringIO
@@ -38,9 +40,9 @@ class TestStemAndLeadPlot(unittest.TestCase):
     def test_decimal_point(self):
 
         eo = ""
-        eo += "01 | 8 4 9 7 \n"
-        eo += "02 | 2 6 8 7 2 3 6 9 4 \n"
-        eo += "03 | 4 0 8 2 7 6 0 3 5 0 4 1 \n"
+        eo += "1 | 8 4 9 7 \n"
+        eo += "2 | 2 6 8 7 2 3 6 9 4 \n"
+        eo += "3 | 4 0 8 2 7 6 0 3 5 0 4 1 \n"
 
         with patch('sys.stdout', new = StringIO()) as fake_out:
             stem_and_leaf_plot(example_3_2)
@@ -62,6 +64,22 @@ class TestStemAndLeadPlot(unittest.TestCase):
             stem_and_leaf_plot(example_3_4)
             self.assertEqual(fake_out.getvalue(), eo)
 
+    def test_3digit_numbers(self):
+
+        eo = ""
+        eo += "0 | 76 52 \n"
+        eo += "1 | 36 00 96 86 \n"
+        eo += "2 | 80 82 57 05 64 50 64 83 \n"
+        eo += "3 | 03 84 17 17 84 73 25 13 \n"
+        eo += "4 | 72 17 00 80 02 22 \n"
+        eo += "5 | \n"
+        eo += "6 | 43 93 \n"
+        eo += "7 | 32 50 49 91 \n"
+        eo += "8 | 91 \n"
+
+        with patch('sys.stdout', new = StringIO()) as fake_out:
+            stem_and_leaf_plot(example_3_5)
+            self.assertEqual(fake_out.getvalue(), eo)
 
 def stem_and_leaf_plot(data, ordered=False, vertical=False, double=False, five_stem=False):
     
@@ -69,20 +87,36 @@ def stem_and_leaf_plot(data, ordered=False, vertical=False, double=False, five_s
 
     signed = min(data) < 0
 
+    floats = False
+    for d in data:
+        if str(d).find('.') >= 0:
+            floats = True
+    
+    digits = len(str(int(max(data))))
+    ftype = 'd'
+    if floats:
+        ftype = 'f'
+        digits += 2
+
+    fsign = ""
+    if signed:
+        digits += 1
+        fsign = "+"
+        
+
     for d in data:
         s = str(d)
 
-        if d < 10 and d > -1:
-            s = '0' + s
+        f = '{:' + fsign + '0' + str(digits) + 'd}'
+        if floats:
+            f = '{:' + fsign + '0' + str(digits)+ '.1' + 'f}'
+        s = f.format(d)
+
         
         stem = s[0]
-        leaf = s[1]
+        leaf = s[1:]
 
-        if signed and d > 0:
-            stem = "+" + stem
-        if signed and d < 0:
-            if d > -10:
-                s = s[0] + "0" + s[1:]
+        if signed:
             stem = s[:2]
             leaf = s[2:]
 
@@ -139,13 +173,26 @@ def stem_and_leaf_plot(data, ordered=False, vertical=False, double=False, five_s
             plot[stem].sort()
 
     if not vertical:
+
+        previous_stem = ""
         for stem in stems:
+
+            if previous_stem != "" and not double and not five_stem and (int(stem) - 1 != int(previous_stem)):
+                insert_stem = str(int(stem)-1)
+                line = insert_stem + " | "
+                print(line)
+                
             
             line = stem + " | "
             for leaf in plot[stem]:
                 line += leaf + " "
-                
+
             print(line)
+
+            previous_stem = stem
+            if stem == "-0":
+                previous_stem = "-1"
+
     else:
 
         max_length = 0
